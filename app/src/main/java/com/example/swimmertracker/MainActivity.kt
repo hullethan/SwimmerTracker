@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Matrix
-import android.graphics.RectF
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
@@ -20,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -34,6 +32,18 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.example.swimmertracker.ui.theme.HomeScreen
+
+import navigation.Screen
+import com.example.swimmertracker.ui.CameraWithOverlay
+
+
+
+
+
 
 class MainActivity : ComponentActivity() {
     private lateinit var cameraExecutor: ExecutorService
@@ -61,17 +71,22 @@ class MainActivity : ComponentActivity() {
             objectDetector = detector
             setContent {
                 SwimmerTrackerTheme {
-                    var boundingBoxes by remember { mutableStateOf<List<Rect>>(emptyList()) }
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        CameraPreview(objectDetector!!) { boxes ->
-                            boundingBoxes = boxes
+                    val navController = rememberNavController()
+                    NavHost(navController = navController, startDestination = Screen.Home.route) {
+                        composable(Screen.Home.route) {
+                            HomeScreen(onStartClick = {
+                                navController.navigate(Screen.Camera.route)
+                            })
                         }
-                        BoundingBoxOverlay(boundingBoxes)
+                        composable(Screen.Camera.route) {
+                            CameraWithOverlay(objectDetector = detector)
+                        }
                     }
                 }
             }
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -201,12 +216,11 @@ fun processObjectDetection(
                 val right = bbox.right * scaleX
                 val bottom = bbox.bottom * scaleY
 
-                // Add extra top padding ONLY in landscape mode
                 val isLandscape = viewWidth > viewHeight
                 val adjustedTop = if (isLandscape) {
-                    (top - 80f).coerceAtLeast(0f) // add ~80px upward
+                    (top - 80f).coerceAtLeast(0f)
                 } else {
-                    top // portrait untouched
+                    top
                 }
 
                 boxes.add(Rect(left, adjustedTop, right, bottom))
@@ -223,7 +237,6 @@ fun processObjectDetection(
     return boxes
 }
 
-
 @Composable
 fun BoundingBoxOverlay(boundingBoxes: List<Rect>) {
     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -238,7 +251,6 @@ fun BoundingBoxOverlay(boundingBoxes: List<Rect>) {
     }
 }
 
-// Extension function to rotate a Bitmap
 fun android.graphics.Bitmap.rotate(degrees: Int): android.graphics.Bitmap {
     if (degrees == 0) return this
     val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
