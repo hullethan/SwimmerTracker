@@ -35,7 +35,7 @@ import java.util.concurrent.Executors
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.swimmertracker.ui.theme.HomeScreen
+import com.example.swimmertracker.ui.HomeScreen
 
 import navigation.Screen
 import com.example.swimmertracker.ui.CameraWithOverlay
