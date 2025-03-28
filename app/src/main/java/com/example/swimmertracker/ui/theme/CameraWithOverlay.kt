@@ -4,30 +4,103 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.LifecycleOwner
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import com.example.swimmertracker.R
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetector
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult
 import android.graphics.Matrix
 import android.view.ViewGroup
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.ui.graphics.RectangleShape
 
 @Composable
 fun CameraWithOverlay(objectDetector: ObjectDetector) {
     var boundingBoxes by remember { mutableStateOf<List<Rect>>(emptyList()) }
+    var isMenuExpanded by remember { mutableStateOf(false) }
+
+    // Dummy stat values (will update with real values later)
+    val personDetected = boundingBoxes.size
+    val animalDetected = 0
+    val swimmerDetected = 0
+    val submerged = 0
+    val alertDetected = 0
 
     Box(modifier = Modifier.fillMaxSize()) {
         CameraPreview(objectDetector) { boxes ->
             boundingBoxes = boxes
         }
+
         BoundingBoxOverlay(boundingBoxes)
+
+        // Floating Action Button
+        // FAB with default transparent background
+        FloatingActionButton(
+            onClick = { isMenuExpanded = !isMenuExpanded },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp),
+            containerColor = Color.White.copy(alpha = 0.15f), // subtle transparent background
+            contentColor = Color.Black, // icon color
+            shape = RectangleShape // square, or use CircleShape for default
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Open Menu"
+            )
+        }
+
+// Transparent dropdown aligned just under the FAB
+        if (isMenuExpanded) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 72.dp, end = 16.dp)
+            ) {
+                Text("Settings", color = Color.Black)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    "Live Detection Stats",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Person Detected: $personDetected", color = Color.Black)
+                Text("Animal Detected: $animalDetected", color = Color.Black)
+                Text("Swimmer Detected: $swimmerDetected", color = Color.Black)
+                Text("Submerged: $submerged", color = Color.Black)
+                Text(
+                    "ALERT: Possible Drowning Detected: $alertDetected",
+                    color = Color.Red
+                )
+            }
+        }
+
+
     }
 }
 
@@ -143,7 +216,6 @@ fun BoundingBoxOverlay(boundingBoxes: List<Rect>) {
     }
 }
 
-// Extension function to rotate a Bitmap
 fun android.graphics.Bitmap.rotate(degrees: Int): android.graphics.Bitmap {
     if (degrees == 0) return this
     val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
